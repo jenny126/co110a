@@ -15,4 +15,8 @@ CHIP Mux16 {
 
     PARTS:
     // Put your code here:
+    Not(in=s, out=ns);
+    Nand(a=a, b=ns, out=aandns);
+    Nand(a=s, b=b, out=sandb);
+    Or(a=aandns, b=sandb, out=out);
 }
