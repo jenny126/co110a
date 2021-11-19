@@ -40,4 +40,12 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
+    DMux(in=instruction, sel=, a=, b=);
+    DMux8Way(in=, sel=, a=, b=, c=, d=, e=, f=, g=, h=);
+    DMux8Way(in=, sel=, a=, b=, c=, d=, e=, f=, g=, h=);
+    Not(in=i,out=ni);
+    Mux16(a=outM, b=inM, sel=ni[15], out=mux1);
+    //Register 
+    //a>load=1
+    Register(in=mux1, load=, out=instruction[15]);
 }
