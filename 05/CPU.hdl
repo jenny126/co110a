@@ -40,12 +40,40 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
-    DMux(in=instruction, sel=, a=, b=);
-    DMux8Way(in=, sel=, a=, b=, c=, d=, e=, f=, g=, h=);
-    DMux8Way(in=, sel=, a=, b=, c=, d=, e=, f=, g=, h=);
-    Not(in=i,out=ni);
-    Mux16(a=outM, b=inM, sel=ni[15], out=mux1);
-    //Register 
-    //a>load=1
-    Register(in=mux1, load=, out=instruction[15]);
+    Or16(a=false, b=instruction, out[15]=isC,
+    out[12]=a, out[11]=c1, out[10]=c2, out[9]=c3, out[8]=c4, out[7]=c5, out[6]=c6, 
+    out[5]=d1, out[4]=d2, out[3]=d3, out[2]=j1, out[1]=j2, out[0]=j3);//命名一下這些指令線線的名子
+    //a regester的load部分  //d1
+    Not(in=isC, out=isA); 
+    And(a=isC, b=d1, out=isCAndd1);  //d1>>a d2>>d d3>>m
+    Or(a=isA, b=isCAndd1, out=Aload);  //isA | (isC & d1)//要有or的原因是因為aRe的前面有一個MUX的c是isC，所以有兩種可能，因此用OR
+    //first Mux16 in picture
+    Mux16(a=instruction, b=ALUout, sel=isC, out=Ain);
+
+    ARegister(in=Ain, load=Aload, out=Aout, out[0..14]=addressM);//addressM=Aout[0..14]
+
+    //DRegister
+    And(a=isC, b=d2, out=Dload);
+    DRegister(in=ALUout, load=Dload, out=Dout);//他的前面沒有MUX所以不用，A指令也沒有辦法負擔運算的部分(D1可以是因為D1影響A，也就是Address)
+
+    //Alu
+    Mux16(a=Aout, b=inM, sel=a, out=AorM);
+    ALU(x=Dout, y=AorM, zx=c1, nx=c2, zy=c3, ny=c4, f=c5, no=c6, out=outM,out=ALUout, zr=zr, ng=ng);
+
+    And(a=isC, b=d3, out=writeM);//d3
+    //Jump
+
+    //做出一個大於
+    Or(a=ng, b=zr, out=ngORzr); 
+    Not(in=ngORzr, out=biger);
+    //開始處理各種條件
+    And(a=ng, b=j1, out=passLT);          // 小於跳(less than) ng<0
+    And(a=zr, b=j2, out=passEQ);          // 等於跳(equal)  zr=0
+    And(a=biger, b=j3, out=passMT);          // 大於跳(more than) biger>0
+    Or(a=passLT, b=passEQ, out=passLE);
+    Or(a=passLE, b=passMT, out=pass);       //條件達成就跳
+    And(a=isC, b=pass, out=PCload);       // PCload = isC & pass
+    //利用計數器去跑
+    PC(in=Aout, load=PCload, inc=true, reset=reset, out[0..14]=pc);//PCload = isC & ((ng&j1) | (zr&j2) | (!ng&!zr&j3))
+
 }
