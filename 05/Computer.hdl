@@ -20,4 +20,7 @@ CHIP Computer {
 
     PARTS:
     // Put your code here:
+    ROM32K(address=nextinstruction ,out=instruction); //接收pc的指令給cpu
+    CPU(inM=Mout ,instruction=instruction ,reset=reset ,outM=inM ,writeM=writeM ,addressM=Amemory ,pc=nextinstruction);
+    Memory(in=inM ,load=writeM ,address=Amemory ,out=Mout);
 }
